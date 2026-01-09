@@ -170,6 +170,19 @@ azure-asbuilt-generator/
 │   ├── output/
 │   └── templates/
 │
+├── claude-desktop/                     # Claude Desktop version
+│   ├── SKILL.md                        # Claude Skill definition
+│   ├── claude_desktop_config.example.json
+│   ├── scripts/
+│   │   ├── Collect-AzureConfig.ps1     # PowerShell collector
+│   │   ├── collect_azure_config.sh     # Bash collector
+│   │   ├── azure_config_collector.py   # Python workflow parser
+│   │   └── generate_asbuilt_doc.js     # Node.js document generator
+│   ├── references/
+│   │   └── shared_infrastructure.json
+│   ├── output/
+│   └── templates/
+│
 ├── examples/
 │   ├── sample_config.json              # Example collected configuration
 │   └── Sample_AsBuilt.docx             # Example generated document
@@ -185,7 +198,7 @@ azure-asbuilt-generator/
 ### All Platforms
 
 | Requirement | Version | Purpose |
-|-------------|---------|---------|
+|-------------|---------|--------|
 | Node.js | 18+ | Document generation |
 | Azure CLI | 2.50+ | Azure resource collection |
 | Azure Subscription | - | Reader access to resources |
@@ -193,14 +206,14 @@ azure-asbuilt-generator/
 ### Windows Additional
 
 | Requirement | Version | Purpose |
-|-------------|---------|---------|
+|-------------|---------|--------|
 | PowerShell | 5.1+ or 7+ | Script execution |
 | Az PowerShell Module | 9.0+ | Alternative to Azure CLI |
 
 ### Linux/macOS Additional
 
 | Requirement | Version | Purpose |
-|-------------|---------|---------|
+|-------------|---------|--------|
 | Bash | 4.0+ | Script execution |
 | jq | 1.6+ | JSON parsing |
 | Python | 3.8+ | Workflow parsing (optional) |
@@ -210,7 +223,7 @@ azure-asbuilt-generator/
 The following RBAC roles are required:
 
 | Resource | Minimum Role |
-|----------|--------------|
+|----------|-------------|
 | API Management | Reader |
 | Logic Apps | Reader |
 | Key Vault | Reader + Secrets List |
@@ -227,41 +240,26 @@ For Logic App Standard workflow definitions, you may need:
 
 ### Claude Code (Windows)
 
-Claude Code is Anthropic's command-line tool for agentic coding. To install this skill:
+Claude Code is Anthropic's command-line tool for agentic coding. Skills are automatically detected from the skills folder.
 
-#### Step 1: Download and Extract
+#### Step 1: Clone Repository
 
 ```powershell
-# Create skills directory
+# Clone to your preferred location
+git clone https://github.com/kroegha/azure-asbuilt-generator.git C:\Azure-As-Built\azure-asbuilt-generator
+```
+
+#### Step 2: Copy Skill to Skills Folder
+
+```powershell
+# Create skills directory if it doesn't exist
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.claude\skills" -Force
 
-# Download and extract (or clone repo)
-git clone https://github.com/your-org/azure-asbuilt-generator.git
-Copy-Item -Recurse azure-asbuilt-generator\windows "$env:USERPROFILE\.claude\skills\azure-asbuilt-generator"
+# Copy the Windows skill
+Copy-Item -Recurse "C:\Azure-As-Built\azure-asbuilt-generator\windows" "$env:USERPROFILE\.claude\skills\azure-asbuilt-generator"
 ```
 
-#### Step 2: Configure Claude Code
-
-Add the skill to your Claude Code configuration:
-
-```powershell
-# Edit Claude Code config
-notepad "$env:USERPROFILE\.claude\config.json"
-```
-
-Add to the `skills` section:
-
-```json
-{
-  "skills": [
-    {
-      "name": "azure-asbuilt-generator",
-      "path": "~/.claude/skills/azure-asbuilt-generator",
-      "enabled": true
-    }
-  ]
-}
-```
+Claude Code automatically detects skills in `~/.claude/skills/` - no configuration required.
 
 #### Step 3: Install Dependencies
 
@@ -273,45 +271,32 @@ npm install docx
 #### Step 4: Verify Installation
 
 ```powershell
-# Test script
-.\Collect-AzureConfig.ps1 -?
+# Test script help
+Get-Help .\Collect-AzureConfig.ps1
 ```
 
 ---
 
 ### Claude Code (Linux/macOS)
 
-#### Step 1: Download and Extract
+#### Step 1: Clone Repository
 
 ```bash
-# Create skills directory
+# Clone to your preferred location
+git clone https://github.com/kroegha/azure-asbuilt-generator.git ~/azure-asbuilt-generator
+```
+
+#### Step 2: Copy Skill to Skills Folder
+
+```bash
+# Create skills directory if it doesn't exist
 mkdir -p ~/.claude/skills
 
-# Clone repository
-git clone https://github.com/your-org/azure-asbuilt-generator.git
-cp -r azure-asbuilt-generator/linux ~/.claude/skills/azure-asbuilt-generator
+# Copy the Linux skill
+cp -r ~/azure-asbuilt-generator/linux ~/.claude/skills/azure-asbuilt-generator
 ```
 
-#### Step 2: Configure Claude Code
-
-```bash
-# Edit Claude Code config
-nano ~/.claude/config.json
-```
-
-Add to the `skills` section:
-
-```json
-{
-  "skills": [
-    {
-      "name": "azure-asbuilt-generator",
-      "path": "~/.claude/skills/azure-asbuilt-generator",
-      "enabled": true
-    }
-  ]
-}
-```
+Claude Code automatically detects skills in `~/.claude/skills/` - no configuration required.
 
 #### Step 3: Install Dependencies
 
@@ -340,7 +325,7 @@ Claude Desktop uses MCP (Model Context Protocol) servers. To add this skill:
 #### Step 1: Locate Config File
 
 | OS | Config Location |
-|----|-----------------|
+|----|----------------|
 | Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 | macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Linux | `~/.config/Claude/claude_desktop_config.json` |
@@ -469,7 +454,7 @@ PowerShell script for collecting Azure configuration.
 #### Parameters
 
 | Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
+|-----------|------|----------|------------|
 | `-ApimName` | String | Yes | API Management instance name |
 | `-ResourceGroup` | String | Yes | Resource group containing APIM |
 | `-ApiName` | String | Yes | Specific API to document |
@@ -516,7 +501,7 @@ Bash script for collecting Azure configuration.
 #### Arguments
 
 | Position | Name | Required | Description |
-|----------|------|----------|-------------|
+|----------|------|----------|------------|
 | 1 | apim-name | Yes | API Management instance name |
 | 2 | resource-group | Yes | Resource group containing APIM |
 | 3 | api-name | Yes | Specific API to document |
@@ -543,7 +528,7 @@ node generate_asbuilt_doc.js <config.json> <output.docx> [--diagram <image.png>]
 #### Arguments
 
 | Argument | Required | Description |
-|----------|----------|-------------|
+|----------|----------|------------|
 | config.json | Yes | Collected configuration JSON file |
 | output.docx | Yes | Output Word document path |
 | --diagram | No | Architecture diagram image (PNG) |
@@ -689,7 +674,7 @@ The tool generates professional Word documents with:
 ### Sample Workflow Documentation
 
 | Step | Action | Type | Description |
-|------|--------|------|-------------|
+|------|--------|------|------------|
 | 1 | Parse_Request | ParseJson | Parse JSON content |
 | 2 | Get_Account_Details | ApiConnection | Execute SQL stored procedure: sp_GetAccountDetails |
 | 3 | Query_Statements | ApiConnection | Execute SQL stored procedure: sp_GetBankStatements |
@@ -787,7 +772,7 @@ Contributions are welcome! Please:
 
 ```bash
 # Clone repo
-git clone https://github.com/your-org/azure-asbuilt-generator.git
+git clone https://github.com/kroegha/azure-asbuilt-generator.git
 cd azure-asbuilt-generator
 
 # Install dependencies
@@ -826,8 +811,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/azure-asbuilt-generator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/azure-asbuilt-generator/discussions)
+- **Issues**: [GitHub Issues](https://github.com/kroegha/azure-asbuilt-generator/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kroegha/azure-asbuilt-generator/discussions)
 - **Author**: Bios Data Center
 
 ---
