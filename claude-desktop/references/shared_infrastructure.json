@@ -1,0 +1,85 @@
+{
+  "front_door": {
+    "resource_name": "[UPDATE: fd-company-prod-001]",
+    "resource_group": "[UPDATE: rg-networking-prod]",
+    "subscription": "[UPDATE: subscription-id]",
+    "sku": "Standard_AzureFrontDoor",
+    "endpoint_hostname": "[UPDATE: endpoint].azurefd.net",
+    "custom_domains": [
+      "[UPDATE: api.client.co.za]"
+    ],
+    "ssl_certificate": "Azure Managed",
+    "origin_groups": [
+      {
+        "name": "apim-origin-group",
+        "load_balancing": {
+          "sample_size": 4,
+          "successful_samples_required": 3
+        },
+        "health_probe": {
+          "path": "/status-0123456789abcdef",
+          "protocol": "Https",
+          "interval_seconds": 30
+        }
+      }
+    ],
+    "routes": [
+      {
+        "name": "api-route",
+        "patterns": ["/api/*", "/*"],
+        "origin_group": "apim-origin-group",
+        "forwarding_protocol": "HttpsOnly"
+      }
+    ],
+    "notes": "Shared Front Door - add custom domain per service"
+  },
+  "waf": {
+    "policy_name": "[UPDATE: waf-company-prod-001]",
+    "resource_group": "[UPDATE: rg-networking-prod]",
+    "mode": "Prevention",
+    "enabled_state": "Enabled",
+    "managed_rules": {
+      "rule_sets": [
+        {
+          "rule_set_type": "Microsoft_DefaultRuleSet",
+          "rule_set_version": "2.1"
+        },
+        {
+          "rule_set_type": "Microsoft_BotManagerRuleSet",
+          "rule_set_version": "1.0"
+        }
+      ]
+    },
+    "custom_rules_template": {
+      "ip_whitelist": {
+        "name": "[service]-ip-whitelist",
+        "priority": 100,
+        "rule_type": "MatchRule",
+        "action": "Allow",
+        "match_conditions": [
+          {
+            "match_variable": "RemoteAddr",
+            "operator": "IPMatch",
+            "match_value": ["[CLIENT_IP_1]", "[CLIENT_IP_2]"]
+          }
+        ]
+      }
+    },
+    "notes": "Shared WAF policy - add IP whitelist rules per service"
+  },
+  "naming_conventions": {
+    "front_door": "fd-{company}-{env}-{number}",
+    "waf_policy": "waf-{company}-{env}-{number}",
+    "apim": "apim-{project}-{env}-{number}",
+    "logic_app": "logic-{project}-{env}-{number}",
+    "key_vault": "kv-{project}-{env}-{number}",
+    "app_insights": "appi-{project}-{env}-{number}",
+    "resource_group": "rg-{project}-{env}"
+  },
+  "regions": {
+    "primary": "South Africa North",
+    "secondary": "South Africa West",
+    "dr": "West Europe"
+  },
+  "_instructions": "Update all [UPDATE: ...] placeholders with your actual Azure resource names before first use."
+}

@@ -1,0 +1,113 @@
+{
+  "front_door": {
+    "resource_name": "[fd-bios-prod-001]",
+    "resource_group": "[rg-networking-prod]",
+    "subscription": "[subscription-id]",
+    "sku": "Standard_AzureFrontDoor",
+    "endpoint_hostname": "[endpoint].azurefd.net",
+    "custom_domains": [
+      "api.[client].co.za"
+    ],
+    "ssl_certificate": "Azure Managed",
+    "origin_groups": [
+      {
+        "name": "apim-origin-group",
+        "load_balancing": {
+          "sample_size": 4,
+          "successful_samples_required": 3
+        },
+        "health_probe": {
+          "path": "/status-0123456789abcdef",
+          "protocol": "Https",
+          "interval_seconds": 30
+        }
+      }
+    ],
+    "routes": [
+      {
+        "name": "api-route",
+        "patterns": ["/api/*", "/*"],
+        "origin_group": "apim-origin-group",
+        "forwarding_protocol": "HttpsOnly",
+        "https_redirect": true
+      }
+    ],
+    "notes": "Shared Front Door instance. Add custom domain per service via Azure Portal or CLI."
+  },
+  "waf": {
+    "policy_name": "[waf-bios-prod-001]",
+    "resource_group": "[rg-networking-prod]",
+    "mode": "Prevention",
+    "enabled_state": "Enabled",
+    "managed_rules": {
+      "rule_sets": [
+        {
+          "rule_set_type": "Microsoft_DefaultRuleSet",
+          "rule_set_version": "2.1"
+        },
+        {
+          "rule_set_type": "Microsoft_BotManagerRuleSet",
+          "rule_set_version": "1.0"
+        }
+      ]
+    },
+    "policy_settings": {
+      "mode": "Prevention",
+      "request_body_check": true,
+      "max_request_body_size_kb": 128,
+      "file_upload_limit_mb": 100
+    },
+    "custom_rules_template": {
+      "ip_whitelist": {
+        "name": "[service]-ip-whitelist",
+        "priority": 100,
+        "rule_type": "MatchRule",
+        "action": "Allow",
+        "match_conditions": [
+          {
+            "match_variable": "RemoteAddr",
+            "operator": "IPMatch",
+            "match_value": ["[CLIENT_IP_1]", "[CLIENT_IP_2]"]
+          }
+        ]
+      },
+      "rate_limit": {
+        "name": "[service]-rate-limit",
+        "priority": 200,
+        "rule_type": "RateLimitRule",
+        "action": "Block",
+        "rate_limit_threshold": 1000,
+        "rate_limit_duration_in_minutes": 1,
+        "match_conditions": [
+          {
+            "match_variable": "RequestUri",
+            "operator": "Contains",
+            "match_value": ["/api/"]
+          }
+        ]
+      }
+    },
+    "notes": "Shared WAF policy. Add service-specific IP whitelist rules using custom_rules_template."
+  },
+  "naming_conventions": {
+    "front_door": "fd-{company}-{env}-{number}",
+    "waf_policy": "waf-{company}-{env}-{number}",
+    "apim": "apim-{project}-{env}-{number}",
+    "logic_app": "logic-{project}-{env}-{number}",
+    "key_vault": "kv-{project}-{env}-{number}",
+    "app_insights": "appi-{project}-{env}-{number}",
+    "resource_group": "rg-{project}-{env}",
+    "examples": {
+      "front_door": "fd-bios-prod-001",
+      "waf_policy": "waf-bios-prod-001",
+      "apim": "apim-sanparks-prod-001",
+      "logic_app": "logic-sanparks-prod-001",
+      "key_vault": "kv-sanparks-prod-001"
+    }
+  },
+  "regions": {
+    "primary": "South Africa North",
+    "secondary": "South Africa West",
+    "dr": "West Europe"
+  }
+}

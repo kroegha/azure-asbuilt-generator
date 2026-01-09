@@ -1,0 +1,183 @@
+{
+  "metadata": {
+    "collection_date": "2025-01-09T12:00:00Z",
+    "version": "2.0",
+    "subscription": "Bios Production",
+    "subscription_id": "00000000-0000-0000-0000-000000000000",
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "service_name": "FNB Bank Statements API",
+    "environment": "Production"
+  },
+  "shared_infrastructure": {
+    "front_door": {
+      "resource_name": "fd-bios-prod-001",
+      "resource_group": "rg-networking-prod",
+      "sku": "Standard_AzureFrontDoor",
+      "endpoint": "bios-api.azurefd.net",
+      "custom_domains": ["api.sanparks.co.za"],
+      "ssl_certificate": "Azure Managed"
+    },
+    "waf": {
+      "policy_name": "waf-bios-prod-001",
+      "resource_group": "rg-networking-prod",
+      "mode": "Prevention",
+      "rule_set": "Microsoft_DefaultRuleSet 2.1",
+      "bot_protection": true
+    }
+  },
+  "service": {
+    "apim": {
+      "resource_name": "apim-sanparks-prod-001",
+      "resource_group": "rg-integration-prod",
+      "resource_id": "/subscriptions/.../resourceGroups/rg-integration-prod/providers/Microsoft.ApiManagement/service/apim-sanparks-prod-001",
+      "region": "South Africa North",
+      "sku": "Standard",
+      "capacity": 1,
+      "gateway_url": "https://apim-sanparks-prod-001.azure-api.net",
+      "developer_portal_url": "https://apim-sanparks-prod-001.developer.azure-api.net",
+      "virtual_network_type": "None",
+      "identity": {
+        "type": "SystemAssigned",
+        "principal_id": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    "api": {
+      "name": "fnb-bank-statements",
+      "display_name": "FNB Bank Statements API",
+      "description": "API for retrieving bank statements from FNB integration",
+      "path": "fnb/statements",
+      "service_url": "https://logic-sanparks-prod-001.azurewebsites.net/api/fnb-statements/triggers/manual/invoke",
+      "protocols": ["https"],
+      "subscription_required": true,
+      "operations": [
+        {
+          "name": "get-statements",
+          "display_name": "Get Bank Statements",
+          "method": "POST",
+          "url_template": "/retrieve"
+        },
+        {
+          "name": "get-statement-by-id",
+          "display_name": "Get Statement by ID",
+          "method": "GET",
+          "url_template": "/statement/{id}"
+        }
+      ]
+    },
+    "logic_app": {
+      "resource_name": "logic-sanparks-prod-001",
+      "resource_group": "rg-integration-prod",
+      "resource_id": "/subscriptions/.../resourceGroups/rg-integration-prod/providers/Microsoft.Web/sites/logic-sanparks-prod-001",
+      "type": "Standard",
+      "region": "South Africa North",
+      "state": "Running",
+      "default_hostname": "logic-sanparks-prod-001.azurewebsites.net",
+      "identity": {
+        "type": "SystemAssigned",
+        "principal_id": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    "workflow": {
+      "name": "fnb-statements",
+      "state": "Enabled",
+      "parsed": {
+        "triggers": [
+          {
+            "name": "manual",
+            "type": "Request",
+            "kind": "Http",
+            "description": "HTTP Request trigger - receives incoming API calls"
+          }
+        ],
+        "actions": [
+          {
+            "name": "Parse_Request",
+            "type": "ParseJson",
+            "description": "Parse JSON content",
+            "run_after": []
+          },
+          {
+            "name": "Get_Account_Details",
+            "type": "ApiConnection",
+            "description": "Execute SQL stored procedure: sp_GetAccountDetails",
+            "run_after": ["Parse_Request"]
+          },
+          {
+            "name": "Query_Statements",
+            "type": "ApiConnection",
+            "description": "Execute SQL stored procedure: sp_GetBankStatements",
+            "run_after": ["Get_Account_Details"]
+          },
+          {
+            "name": "Transform_Response",
+            "type": "Compose",
+            "description": "Transform/compose data",
+            "run_after": ["Query_Statements"]
+          },
+          {
+            "name": "Response",
+            "type": "Response",
+            "description": "Return HTTP 200 response",
+            "run_after": ["Transform_Response"]
+          }
+        ],
+        "connections": ["sql-sanparks-prod"],
+        "data_sources": [
+          {
+            "type": "SQL Server",
+            "action": "Get_Account_Details",
+            "operation": "sp_GetAccountDetails"
+          },
+          {
+            "type": "SQL Server",
+            "action": "Query_Statements",
+            "operation": "sp_GetBankStatements"
+          }
+        ]
+      }
+    },
+    "connections": [
+      {
+        "name": "sql-sanparks-prod",
+        "type": "sql",
+        "status": "Connected",
+        "sql_server": "sql-sanparks-prod.database.windows.net",
+        "database": "SANParksFinance",
+        "gateway": {
+          "id": "/subscriptions/.../resourceGroups/rg-integration-prod/providers/Microsoft.Web/connectionGateways/gw-sanparks-prod",
+          "name": "gw-sanparks-prod"
+        }
+      }
+    ],
+    "data_gateway": {
+      "name": "gw-sanparks-prod",
+      "resource_group": "rg-integration-prod",
+      "region": "South Africa North",
+      "type": "Personal",
+      "machine_name": "SANPARKS-GW01"
+    },
+    "key_vault": {
+      "name": "kv-sanparks-prod-001",
+      "resource_group": "rg-integration-prod",
+      "region": "South Africa North",
+      "sku": "standard",
+      "vault_uri": "https://kv-sanparks-prod-001.vault.azure.net/",
+      "soft_delete_enabled": true,
+      "purge_protection": true,
+      "secrets": [
+        { "name": "sql-connection-string", "enabled": true },
+        { "name": "fnb-api-key", "enabled": true },
+        { "name": "apim-subscription-key", "enabled": true }
+      ]
+    },
+    "app_insights": {
+      "name": "appi-sanparks-prod-001",
+      "resource_group": "rg-integration-prod",
+      "region": "South Africa North",
+      "instrumentation_key": "00000000-0000-0000-0000-000000000000",
+      "connection_string": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://southafricanorth-1.in.applicationinsights.azure.com/",
+      "workspace_id": "/subscriptions/.../resourceGroups/rg-monitoring/providers/Microsoft.OperationalInsights/workspaces/law-sanparks-prod",
+      "retention_days": 90
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-desktop/main/config.schema.json",
+  "mcpServers": {
+    "azure-asbuilt": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "${AZURE_ASBUILT_PATH}/scripts/mcp-server.ps1"
+      ],
+      "env": {
+        "AZURE_ASBUILT_PATH": "C:/Azure-As-Built/azure-asbuilt-generator/claude-desktop"
+      }
+    }
+  },
+  "_comments": {
+    "description": "Azure As-Built Documentation Generator MCP Server Configuration",
+    "platforms": {
+      "windows": {
+        "config_location": "%APPDATA%\\Claude\\claude_desktop_config.json",
+        "example_path": "C:/Azure-As-Built/azure-asbuilt-generator/claude-desktop"
+      },
+      "macos": {
+        "config_location": "~/Library/Application Support/Claude/claude_desktop_config.json",
+        "example_path": "~/azure-asbuilt-generator/claude-desktop"
+      },
+      "linux": {
+        "config_location": "~/.config/Claude/claude_desktop_config.json",
+        "example_path": "~/azure-asbuilt-generator/claude-desktop"
+      }
+    },
+    "setup_instructions": [
+      "1. Copy this file to your Claude Desktop config location (see platforms above)",
+      "2. Update AZURE_ASBUILT_PATH to match your installation directory",
+      "3. Restart Claude Desktop",
+      "4. The azure-asbuilt tools will be available in conversations"
+    ],
+    "prerequisites": [
+      "Azure CLI installed and logged in (az login)",
+      "Node.js 18+ installed",
+      "PowerShell 7+ (pwsh) installed for cross-platform support",
+      "npm install docx (run in scripts directory)"
+    ]
+  }
+}
