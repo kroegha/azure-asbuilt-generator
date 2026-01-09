@@ -320,45 +320,40 @@ which az jq node
 
 ### Claude Desktop
 
-Claude Desktop uses MCP (Model Context Protocol) servers. To add this skill:
+Claude Desktop supports drag-and-drop skill installation.
 
-#### Step 1: Locate Config File
+#### Step 1: Download the Skill ZIP
 
-| OS | Config Location |
-|----|----------------|
-| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
-| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Linux | `~/.config/Claude/claude_desktop_config.json` |
+Download the `claude-desktop` folder as a ZIP file from this repository, or create one:
 
-#### Step 2: Add Skill Configuration
-
-Edit the config file and add:
-
-```json
-{
-  "mcpServers": {
-    "azure-asbuilt": {
-      "command": "node",
-      "args": [
-        "/path/to/azure-asbuilt-generator/mcp-server.js"
-      ],
-      "env": {
-        "AZURE_SUBSCRIPTION_ID": "your-subscription-id"
-      }
-    }
-  }
-}
+```powershell
+# Windows
+Compress-Archive -Path "C:\Azure-As-Built\azure-asbuilt-generator\claude-desktop" -DestinationPath "azure-asbuilt-skill.zip"
 ```
 
-> **Note**: MCP server implementation (`mcp-server.js`) is planned for future release. Currently, use Claude Code or manual execution.
+```bash
+# Linux/macOS
+cd ~/azure-asbuilt-generator
+zip -r azure-asbuilt-skill.zip claude-desktop/
+```
 
-#### Step 3: Alternative - Manual Skill Reference
+#### Step 2: Install in Claude Desktop
 
-Without MCP, you can reference the skill in Claude Desktop by:
+1. Open **Claude Desktop**
+2. Go to **Settings** → **Capabilities**
+3. Click **Add Skills**
+4. **Drag and drop** the `azure-asbuilt-skill.zip` file
 
-1. Uploading `SKILL.md` to your conversation
-2. Claude will read the skill definition and follow the instructions
-3. Use Claude's computer use feature to execute scripts
+That's it! The skill is now available in Claude Desktop.
+
+#### Step 3: Install Dependencies
+
+Before using the skill, ensure Node.js dependencies are installed:
+
+```bash
+cd <skill-installation-path>/scripts
+npm install docx
+```
 
 ---
 
